@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>FaceAttend - Biometric Attendance System</title>
+    <!-- Inline theme preload script to avoid flash -->
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('faceattend_theme');
+          if (saved) {
+            var theme = JSON.parse(saved);
+            var root = document.documentElement;
+            if (theme.isDark) {
+              root.setAttribute('data-theme', 'dark');
+              root.classList.add('dark');
+            } else {
+              root.removeAttribute('data-theme');
+              root.classList.remove('dark');
+            }
+            if (theme.tokens) {
+              for (var key in theme.tokens) {
+                root.style.setProperty('--' + key, theme.tokens[key]);
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error preloading theme:', e);
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-app text-main antialiased selection:bg-primary/20 selection:text-primary">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
