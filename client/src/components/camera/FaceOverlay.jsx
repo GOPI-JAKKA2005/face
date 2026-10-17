@@ -76,7 +76,7 @@ export function FaceOverlay({
         key={state + current.text}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="absolute bottom-8 px-5 py-2.5 rounded-full bg-black/75 backdrop-blur-md border border-white/10 shadow-xl flex items-center gap-2.5"
+        className="absolute bottom-16 sm:bottom-20 px-5 py-2.5 rounded-full bg-black/75 backdrop-blur-md border border-white/10 shadow-xl flex items-center gap-2.5"
       >
         <span className={`w-2.5 h-2.5 rounded-full ${state === 'checking' ? 'animate-ping' : ''} ${
           state === 'recognized' ? 'bg-success' : state === 'not_recognized' ? 'bg-danger' : state === 'blink' ? 'bg-warning' : 'bg-primary'

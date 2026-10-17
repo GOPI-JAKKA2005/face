@@ -46,12 +46,17 @@ export const CameraView = forwardRef(function CameraView(
 
     try {
       const constraints = {
-        video: {
-          deviceId: deviceId ? { exact: deviceId } : undefined,
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: 'user'
-        },
+        video: deviceId
+          ? {
+              deviceId: { exact: deviceId },
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            }
+          : {
+              facingMode: 'user',
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            },
         audio: false
       };
 
@@ -60,12 +65,21 @@ export const CameraView = forwardRef(function CameraView(
 
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
-        videoRef.current.onloadedmetadata = () => {
+
+        const triggerReady = () => {
           if (videoRef.current) {
             videoRef.current.play().catch(e => console.warn('Play interrupted:', e));
             onReady(videoRef.current);
           }
         };
+
+        videoRef.current.onloadedmetadata = triggerReady;
+        videoRef.current.oncanplay = triggerReady;
+        videoRef.current.onplaying = triggerReady;
+
+        if (videoRef.current.readyState >= 1) {
+          triggerReady();
+        }
       }
     } catch (err) {
       console.error('Camera access error:', err);
@@ -94,6 +108,7 @@ export const CameraView = forwardRef(function CameraView(
         <video
           ref={videoRef}
           playsInline
+          webkit-playsinline="true"
           muted
           autoPlay
           className={`w-full h-full object-cover select-none pointer-events-none transition-transform duration-200 ${

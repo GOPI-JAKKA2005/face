@@ -138,9 +138,13 @@ export function KioskPage() {
     }
   };
 
+  const [videoEl, setVideoEl] = useState(null);
+
   // 5. Recognition Loop
   const { overlayState, prompt, currentResult } = useRecognitionLoop({
-    videoRef: { current: cameraRef.current?.getVideoElement() },
+    cameraRef,
+    videoRef: cameraRef,
+    videoEl,
     isActive: !modelLoading,
     config: kioskConfig?.recognition || {},
     soundEnabled: deviceSettings.sound,
@@ -197,25 +201,26 @@ export function KioskPage() {
 
       {/* Center Camera Area */}
       <main className="relative flex-1 w-full h-full flex items-center justify-center">
-        {modelLoading ? (
-          <div className="text-center space-y-3 z-20">
+        {modelLoading && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm space-y-3">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-base font-semibold">Initializing Neural Biometric Models...</p>
             <p className="text-xs text-gray-400">Loading WebGL Vision Shards</p>
           </div>
-        ) : (
-          <CameraView
-            ref={cameraRef}
-            mirrored={deviceSettings.mirror}
-            deviceId={deviceSettings.deviceId}
-            className="w-full h-full object-cover"
-          >
-            <FaceOverlay
-              state={currentResult ? (currentResult.matched ? (currentResult.status === 'late' ? 'recognized' : 'recognized') : 'not_recognized') : overlayState}
-              prompt={prompt}
-            />
-          </CameraView>
         )}
+
+        <CameraView
+          ref={cameraRef}
+          onReady={setVideoEl}
+          mirrored={deviceSettings.mirror}
+          deviceId={deviceSettings.deviceId}
+          className="w-full h-full object-cover"
+        >
+          <FaceOverlay
+            state={currentResult ? (currentResult.matched ? (currentResult.status === 'late' ? 'recognized' : 'recognized') : 'not_recognized') : overlayState}
+            prompt={prompt}
+          />
+        </CameraView>
 
         {/* Big Animated Result Card */}
         {currentResult && (

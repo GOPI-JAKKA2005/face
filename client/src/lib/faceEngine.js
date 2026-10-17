@@ -67,7 +67,7 @@ export async function detectFaceWithFeatures(mediaEl, inputSize = 320) {
 
   const options = new faceapi.TinyFaceDetectorOptions({
     inputSize,
-    scoreThreshold: 0.35
+    scoreThreshold: 0.28
   });
 
   const detection = await faceapi
@@ -180,16 +180,28 @@ export function estimateHeadYaw(landmarks) {
   return Math.round(ratio * 45);
 }
 
+let sharedOffscreenCanvas = null;
+
+function getSharedOffscreenCanvas() {
+  if (typeof document === 'undefined') return null;
+  if (!sharedOffscreenCanvas) {
+    sharedOffscreenCanvas = document.createElement('canvas');
+    sharedOffscreenCanvas.width = 120;
+    sharedOffscreenCanvas.height = 120;
+  }
+  return sharedOffscreenCanvas;
+}
+
 /**
  * Evaluates sample capture quality gates.
  *
  * Quality gates (Section 9.4):
  * - Exactly one face
- * - Face box at least 30% of frame height
- * - Eyes open (EAR >= 0.2)
+ * - Face box at least 14% of minimum frame dimension (or >= 80px)
+ * - Eyes open (EAR >= 0.14)
  * - Head yaw within +-15 degrees for frontal
- * - Brightness within range [50, 220]
- * - Sharpness variance >= 15
+ * - Brightness within range [20, 250]
+ * - Sharpness variance >= 4
  *
  * @param {object} detection
  * @param {HTMLVideoElement} videoEl
@@ -203,10 +215,11 @@ export function evaluateQuality(detection, videoEl) {
   const box = detection.detection.box;
   const frameHeight = videoEl.videoHeight || 480;
   const frameWidth = videoEl.videoWidth || 640;
+  const minDimension = Math.min(frameWidth, frameHeight);
 
-  // 1. Face box relative height (at least 16% of frame height)
-  const heightRatio = box.height / frameHeight;
-  const isSizeGood = heightRatio >= 0.16;
+  // 1. Face box relative height (evaluated against minDimension so portrait mobile and landscape desktop are treated consistently)
+  const heightRatio = box.height / minDimension;
+  const isSizeGood = heightRatio >= 0.14 || box.height >= 80;
 
   // 2. Eye Aspect Ratio (EAR)
   const pts = detection.landmarks.positions;
@@ -215,31 +228,32 @@ export function evaluateQuality(detection, videoEl) {
   const rEar = computeEyeAspectRatio(rEyePts);
   const lEar = computeEyeAspectRatio(lEyePts);
   const avgEar = (rEar + lEar) / 2;
-  const isEyesOpen = avgEar >= 0.15;
+  const isEyesOpen = avgEar >= 0.14;
 
   // 3. Head Yaw Angle
   const yaw = estimateHeadYaw(detection.landmarks);
 
-  // 4. Crop face to offscreen canvas to check brightness & sharpness
-  const offscreen = document.createElement('canvas');
-  offscreen.width = 120;
-  offscreen.height = 120;
-  const ctx = offscreen.getContext('2d', { willReadFrequently: true });
+  // 4. Crop face to shared offscreen canvas to check brightness & sharpness without GC churn
+  const offscreen = getSharedOffscreenCanvas();
+  let brightness = 128;
+  let sharpness = 100;
 
-  const sx = Math.max(0, box.x);
-  const sy = Math.max(0, box.y);
-  const sw = Math.min(box.width, frameWidth - sx);
-  const sh = Math.min(box.height, frameHeight - sy);
+  if (offscreen) {
+    const ctx = offscreen.getContext('2d', { willReadFrequently: true });
+    const sx = Math.max(0, box.x);
+    const sy = Math.max(0, box.y);
+    const sw = Math.min(box.width, frameWidth - sx);
+    const sh = Math.min(box.height, frameHeight - sy);
 
-  if (sw > 0 && sh > 0) {
-    ctx.drawImage(videoEl, sx, sy, sw, sh, 0, 0, 120, 120);
+    if (sw > 0 && sh > 0 && ctx) {
+      ctx.drawImage(videoEl, sx, sy, sw, sh, 0, 0, 120, 120);
+      brightness = computeBrightness(offscreen);
+      sharpness = computeSharpness(offscreen);
+    }
   }
 
-  const brightness = computeBrightness(offscreen);
-  const isLightingGood = brightness >= 25 && brightness <= 245;
-
-  const sharpness = computeSharpness(offscreen);
-  const isSharp = sharpness >= 5;
+  const isLightingGood = brightness >= 20 && brightness <= 250;
+  const isSharp = sharpness >= 4;
 
   const score = Math.min(1.0, Math.max(0.1, (
     (isSizeGood ? 0.3 : 0.1) +

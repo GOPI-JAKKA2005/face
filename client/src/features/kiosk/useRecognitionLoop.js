@@ -4,7 +4,9 @@ import { LivenessDetector } from '../../lib/liveness.js';
 import { api } from '../../lib/api.js';
 
 export function useRecognitionLoop({
+  cameraRef,
   videoRef,
+  videoEl: propVideoEl,
   isActive = true,
   config = {},
   _soundEnabled = true,
@@ -28,6 +30,23 @@ export function useRecognitionLoop({
     livenessDetector.current = new LivenessDetector({ strict: Boolean(config.strictLiveness) });
   }, [config.strictLiveness]);
 
+  // Helper to dynamically obtain the video element from prop or refs
+  const getVideo = () => {
+    if (propVideoEl && propVideoEl.readyState >= 2) return propVideoEl;
+    const ref = cameraRef || videoRef;
+    if (!ref) return propVideoEl || null;
+    if (typeof ref === 'function') {
+      try { return ref(); } catch (_e) { return null; }
+    }
+    if (ref.current) {
+      if (typeof ref.current.getVideoElement === 'function') {
+        return ref.current.getVideoElement();
+      }
+      return ref.current;
+    }
+    return propVideoEl || null;
+  };
+
   useEffect(() => {
     if (!isActive) return;
 
@@ -37,7 +56,7 @@ export function useRecognitionLoop({
 
     const loop = async () => {
       const now = Date.now();
-      const videoEl = videoRef.current;
+      const videoEl = getVideo();
 
       // Clean expired cooldown entries
       for (const [id, expires] of cooldownMap.current.entries()) {
@@ -46,7 +65,7 @@ export function useRecognitionLoop({
 
       // If a result card is currently being displayed, hold state
       if (now < resultDisplayUntil.current) {
-        animId = requestAnimationFrame(loop);
+        if (isRunning) animId = requestAnimationFrame(loop);
         return;
       } else if (currentResult && now >= resultDisplayUntil.current) {
         setCurrentResult(null);
@@ -114,7 +133,7 @@ export function useRecognitionLoop({
       isRunning = false;
       if (animId) cancelAnimationFrame(animId);
     };
-  }, [isActive, config, currentResult]);
+  }, [isActive, config, currentResult, propVideoEl]);
 
   const submitAveragedMark = async (samples) => {
     // Average descriptors and eye vectors
