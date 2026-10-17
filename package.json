@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -n \"SERVER,CLIENT\" -c \"blue,green\" \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:client": "npm --prefix client run dev",
-    "dev:server": "npm --prefix server run dev",
+    "dev:client": "vite client",
+    "dev:server": "node server/server.js",
     "build": "vite build client --outDir ../dist",
     "lint": "eslint \"client/src/**/*.{js,jsx}\" server scripts --max-warnings 0",
     "models": "node scripts/downloadModels.js",

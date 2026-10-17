@@ -1,3 +1,10 @@
-import app from '../server/app.js'
+import { sendJson, setCors } from './_lib/http.js';
 
-export default app
+export default async function handler(req, res) {
+  setCors(req, res);
+  return sendJson(res, 200, {
+    status: 'ok',
+    service: 'FaceAttend API (Serverless)',
+    timestamp: new Date().toISOString()
+  });
+}
