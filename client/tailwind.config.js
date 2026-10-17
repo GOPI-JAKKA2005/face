@@ -1,6 +1,16 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
+    path.join(__dirname, 'index.html'),
+    path.join(__dirname, 'src/**/*.{js,jsx}'),
+    './client/index.html',
+    './client/src/**/*.{js,jsx}',
     './index.html',
     './src/**/*.{js,jsx}'
   ],
