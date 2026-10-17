@@ -7,22 +7,22 @@ import {
   formatLateDuration,
   resolveActiveSession,
   calculateAttendanceStatus
-} from '../api/_lib/time.js';
+} from '../server/api/_lib/time.js';
 import {
   euclideanDistance,
   calculateConfidence
-} from '../api/_lib/match.js';
+} from '../server/api/_lib/match.js';
 import {
   computeEyeVector,
   eyeVectorDifference,
   rotateLandmarksToHorizontal
-} from '../api/_lib/eye.js';
+} from '../server/api/_lib/eye.js';
 import {
   studentSchema,
   sessionSettingsSchema,
   recognitionSettingsSchema,
   manualMarkSchema
-} from '../api/_lib/validate.js';
+} from '../server/api/_lib/validate.js';
 import {
   formatLateDuration as formatClientLateDuration,
   formatMinutesTo12Hour,
@@ -179,7 +179,7 @@ describe('Time Module (api/_lib/time.js)', () => {
   });
 
   it('evaluates individual student timeSlot correctly (10:00 AM - 07:30 PM shift)', async () => {
-    const { evaluateStudentAttendance } = await import('../api/_lib/time.js');
+    const { evaluateStudentAttendance } = await import('../server/api/_lib/time.js');
 
     const customStudent = {
       id: 'student_custom_1',

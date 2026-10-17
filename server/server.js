@@ -61,39 +61,50 @@ const adapt = (handler) => async (req, res) => {
   }
 };
 
+const router = express.Router();
+
 // Healthcheck
-app.get('/api/health', (req, res) => {
+router.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'face-attend-backend', timestamp: new Date().toISOString() });
 });
 
 // Attendance Endpoints
-app.all('/api/attendance/mark', adapt(markHandler));
-app.all('/api/attendance/list', adapt(listAttendanceHandler));
-app.all('/api/attendance/manual', adapt(manualAttendanceHandler));
-app.all('/api/attendance/export', adapt(exportAttendanceHandler));
-app.all('/api/attendance/:id', adapt(attendanceByIdHandler));
+router.all('/attendance/mark', adapt(markHandler));
+router.all('/attendance/list', adapt(listAttendanceHandler));
+router.all('/attendance/manual', adapt(manualAttendanceHandler));
+router.all('/attendance/export', adapt(exportAttendanceHandler));
+router.all('/attendance/:id', adapt(attendanceByIdHandler));
 
 // Student Endpoints
-app.all('/api/students/signature', adapt(signatureHandler));
-app.all('/api/students/:id', adapt(studentByIdHandler));
-app.all('/api/students', adapt(studentsIndexHandler));
+router.all('/students/signature', adapt(signatureHandler));
+router.all('/students/:id', adapt(studentByIdHandler));
+router.all('/students', adapt(studentsIndexHandler));
 
 // Settings & Kiosk Endpoints
-app.all('/api/settings', adapt(settingsHandler));
-app.all('/api/kiosk/config', adapt(kioskConfigHandler));
+router.all('/settings', adapt(settingsHandler));
+router.all('/kiosk/config', adapt(kioskConfigHandler));
 
 // Media Endpoints
-app.all('/api/media/upload-image', adapt(uploadImageHandler));
-app.all('/api/media/video', adapt(videoHandler));
+router.all('/media/upload-image', adapt(uploadImageHandler));
+router.all('/media/video', adapt(videoHandler));
 
 // Chatbot Endpoint
-app.all('/api/chat', adapt(chatHandler));
+router.all('/chat', adapt(chatHandler));
 
-app.listen(PORT, () => {
-  console.log(`===============================================`);
-  console.log(` FaceAttend Backend Server running on port ${PORT}`);
-  console.log(` Healthcheck: http://localhost:${PORT}/api/health`);
-  console.log(`===============================================`);
+router.get('/', (req, res) => {
+  res.json({ status: 'ok', service: 'face-attend-backend', timestamp: new Date().toISOString() });
 });
+
+app.use('/api', router);
+app.use('/', router);
+
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`===============================================`);
+    console.log(` FaceAttend Backend Server running on port ${PORT}`);
+    console.log(` Healthcheck: http://localhost:${PORT}/api/health`);
+    console.log(`===============================================`);
+  });
+}
 
 export default app;
